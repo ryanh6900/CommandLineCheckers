@@ -7,21 +7,21 @@ using namespace std;
 //Remember to model abstractions after real-world concepts within the game of checkers.
 struct PlayTile {
     //char color;
-    int row, column;
+    int rowNum, columnNum;
     bool isOccupied;
     char occupiedPieceColor = ' ';
     char emptySymbol = '+';
   
    PlayTile(){
-        row = -1;
-        column = -1;
+        rowNum = -1;
+        columnNum = -1;
         isOccupied = false;
     }
 
    PlayTile(int _row, int _column,bool _isOccupied) {
        //color = _color;
-       row = _row;
-       column = _column;
+       rowNum = _row;
+       columnNum = _column;
        isOccupied = _isOccupied;
     }
 
@@ -32,12 +32,12 @@ struct PlayTile {
    /* void DrawEmpty() {
         cout << emptySymbol;
     }*/
-    int GetRowIndex() {
+   /* int GetRowNumber() {
         return row;
     }
-    int GetColumnIndex() {
+    int GetColumnNumber() {
         return column;
-    }
+    }*/
     void SetOccupied(bool _isOccupied,char occupiedPiece) {
         isOccupied = _isOccupied;
         occupiedPieceColor = occupiedPiece;
@@ -53,15 +53,15 @@ struct Board {
     void SetupBoardPlaytiles(int size, char playerOneColor, char playerTwoColor) { //follow the model, view, controller pattern
         PlayTile newPlayTile;
         int playtileIndex = 0;
-        for (int i = 1; i <= size; i++) {
+        for (int i = 1; i <= size; i++) { //i is the row number, j is the column number
             for (int j = 1; j <= size; j++) {
                 if (i % 2 == 0) {
                     if (j % 2 != 0) {
                         newPlayTile = PlayTile(i, j, false);
-                        if (i < 4) {
+                        if (i <= 3) {
                             newPlayTile.SetOccupied(true,playerTwoColor);
                         }
-                        else if (i > 5) {
+                        else if (i >= 6) {
                             newPlayTile.SetOccupied(true, playerOneColor);
                         }
                         playableTiles[playtileIndex] = newPlayTile;
@@ -72,10 +72,10 @@ struct Board {
                 else {
                     if (j % 2 == 0) {
                         newPlayTile = PlayTile(i, j, false);
-                        if (i < 4) {
+                        if (i <= 3) {
                             newPlayTile.SetOccupied(true,playerTwoColor); 
                         }
-                        else if (i > 5) {
+                        else if (i >= 6) {
                             newPlayTile.SetOccupied(true,playerOneColor);
                         }
                         playableTiles[playtileIndex] = newPlayTile;
@@ -87,18 +87,31 @@ struct Board {
             cout << endl;
         }
     }
-    void DrawBoard(int size) {
-        
-        int playtileIndex = 0;
+    void DrawBoard() {
+        for (int index = 0; index < 32; index++) {
+            int i = playableTiles[index].rowNum;
+            int j = playableTiles[index].columnNum;
+            if (index % 4 == 0) cout << endl;
+            if (i % 2 == 0) {
+                if (j % 2 != 0) playableTiles[index].DrawTile();
+                else cout << " - ";
+            }
+            else {
+                if (j % 2 == 0) playableTiles[index].DrawTile();
+                else cout << " - ";
+            }
+            //cout << " - ";
+        }
+        /*int playtileIndex = 0;
         for (int i = 1; i <=size; i++) {
             for (int j = 1; j <= size; j++) {
                 if (i % 2 == 0) {
                     if (j % 2 != 0) {
-                        if (i < 4) {
+                        if (i <= 3) {
                             playableTiles[i].DrawTile();
                             playtileIndex++;
                         }
-                        else if (i > 5) {
+                        else if (i >= 6) {
                             playableTiles[i].DrawTile();
                             playtileIndex++;
                         }
@@ -111,11 +124,11 @@ struct Board {
                 }
                 else {
                     if (j % 2 == 0) {
-                        if (i < 4) {
+                        if (i <= 3) {
                             playableTiles[i].DrawTile();
                             playtileIndex++;
                         }
-                        else if (i > 5) {
+                        else if (i >= 6) {
                             playableTiles[i].DrawTile();
                             playtileIndex++;
                         }
@@ -128,7 +141,7 @@ struct Board {
                 }
             }
             cout << endl;
-        }
+        }*/
     }
 
 
@@ -220,7 +233,7 @@ int main()
     Board gameBoard;
     gameBoard.DrawBoardWithoutPieces(8);
     gameBoard.SetupBoardPlaytiles(8, playerOneColor, PlayerTwoColor);
-    gameBoard.DrawBoard(8);
+    gameBoard.DrawBoard();
     return 0;
 }
 
