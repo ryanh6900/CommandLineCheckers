@@ -256,7 +256,7 @@ int main()
         gameBoard.DrawBoard();
         cin >> from;
     
-        if (from == 0) break;
+        if (from == 0)break;
         cin >> to;
         gameBoard.MovePiece(from-1, to-1);
     }
