@@ -4,33 +4,126 @@
 #include <iostream>
 #include <vector>
 using namespace std;
-struct Piece {
-    char color;
+//Remember to model abstractions after real-world concepts within the game of checkers.
+struct PlayTile {
+    //char color;
     int row, column;
-    bool isCaptured;
+    bool isOccupied;
+    char occupiedPieceColor = ' ';
+    char emptySymbol = '+';
+  
+   PlayTile(){
+        row = -1;
+        column = -1;
+        isOccupied = false;
+    }
 
-    Piece(char _color, int _row, int _column, bool _isCaptured) {
-       color = _color;
+   PlayTile(int _row, int _column,bool _isOccupied) {
+       //color = _color;
        row = _row;
        column = _column;
-       isCaptured = _isCaptured;
-    }
-    void DrawPiece(char color) {
-        std::cout << " "<< color << " ";
+       isOccupied = _isOccupied;
     }
 
-    int GetRow() {
+    void DrawTile() {
+        if (isOccupied) cout << " " << occupiedPieceColor << " ";
+        else cout << " " << emptySymbol << " ";
+    }
+   /* void DrawEmpty() {
+        cout << emptySymbol;
+    }*/
+    int GetRowIndex() {
         return row;
     }
-    int GetColumn() {
+    int GetColumnIndex() {
         return column;
     }
-    char GetColor() {
-        return color;
+    void SetOccupied(bool _isOccupied,char occupiedPiece) {
+        isOccupied = _isOccupied;
+        occupiedPieceColor = occupiedPiece;
     }
+    /*char GetColor() {
+        return color;
+    }*/
 };
 
-struct Board {
+struct Board { 
+    PlayTile playableTiles[32];
+    void SetupBoardPlaytiles(int size, char playerOneColor, char playerTwoColor) { //follow the model, view, controller pattern
+        PlayTile newPlayTile;
+        int playtileIndex = 0;
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                if (i % 2 == 0) {
+                    if (j % 2 != 0) {
+                        newPlayTile = PlayTile(i, j, false);
+                        if (i < 3) {
+                            newPlayTile.SetOccupied(true,playerTwoColor);
+                        }
+                        else if (i > 4) {
+                            newPlayTile.SetOccupied(true, playerOneColor);
+                        }
+                        playableTiles[playtileIndex] = newPlayTile;
+                        playtileIndex++;
+                    }
+                    //else cout << " - ";
+                }
+                else {
+                    if (j % 2 == 0) {
+                        newPlayTile = PlayTile(i, j, false);
+                        if (i < 3) {
+                            newPlayTile.SetOccupied(true,playerTwoColor); 
+                        }
+                        else if (i > 4) {
+                            newPlayTile.SetOccupied(true,playerOneColor);
+                        }
+                        playableTiles[playtileIndex] = newPlayTile;
+                        playtileIndex++;
+                    }
+                    //else cout << " - ";
+                }
+            }
+            cout << endl;
+        }
+    }
+    void DrawBoard(int size) {
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                if (i % 2 == 0) {
+                    if (j % 2 != 0) {
+                        newPlayTile = PlayTile(i, j, false);
+                        if (i < 3) {
+                            newPlayTile.SetOccupied(true);
+                            newPlayTile.DrawTile(playerOneColor);
+                        }
+                        else if (i > 4) {
+                            newPlayTile.SetOccupied(true);
+                            newPlayTile.DrawTile(playerTwoColor);
+                        }
+                        else newPlayTile.DrawEmpty();
+                    }
+                    else cout << " - ";
+                }
+                else {
+                    if (j % 2 == 0) {
+                        if (i < 3) {
+                            newPlayTile.SetOccupied(true);
+                            newPlayTile.DrawTile(playerOneColor);
+                        }
+                        else if (i > 4) {
+                            newPlayTile.SetOccupied(true);
+                            newPlayTile.DrawTile(playerTwoColor);
+                        }
+                        else newPlayTile.DrawEmpty();
+                    }
+                    else cout << " - ";
+                }
+            }
+            cout << endl;
+        }
+    }
+
+
     void DrawBoardWithoutPieces(int size) {
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
@@ -45,55 +138,80 @@ struct Board {
             }
             cout << endl;
         }
+        cout << endl;
     }
-
-    void DrawBoard(int size, char playerOneColor, char playerTwoColor) {
+    /*void DrawBoard(int size, char playerOneColor, char playerTwoColor) {
+        PlayTile newPlayTile;
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
                 if (i % 2 == 0) {
-                    if (j % 2 != 0) cout << " + ";
+                    if (j % 2 != 0) {
+                        newPlayTile = PlayTile(i, j, false);
+                        if (i < 3) {
+                            newPlayTile.SetOccupied(true);
+                            newPlayTile.DrawTile(playerOneColor);
+                        }
+                        else if (i > 4) {
+                            newPlayTile.SetOccupied(true);
+                            newPlayTile.DrawTile(playerTwoColor);
+                        }
+                        else newPlayTile.DrawEmpty();
+                    }
                     else cout << " - ";
                 }
                 else {
-                    if (j % 2 != 0) cout << " - ";
-                    else cout << " + ";
+                    if (j % 2 == 0) {
+                        if (i < 3) {
+                            newPlayTile.SetOccupied(true);
+                            newPlayTile.DrawTile(playerOneColor);
+                        }
+                        else if (i > 4) {
+                            newPlayTile.SetOccupied(true);
+                            newPlayTile.DrawTile(playerTwoColor);
+                        }
+                        else newPlayTile.DrawEmpty();
+                    }
+                    else cout << " - ";
                 }
             }
             cout << endl;
         }
-    }
+    }*/
 };
 
 struct Player {
     char playerColor;
-    vector<Piece> pieces;
-    void SetupPieces(char color, bool isPlayerOne){/*, int boardSize, int rowsOfPieces, bool isPlayerOne) {*/
-        playerColor = color;
-            for (int i = 0; i < 8; i++) {
-                for (int j = 0; j < 3; j++) {
-                    if (i % 2 == 0) {
-                        if (j % 2 != 0) {
-                            Piece newPiece = isPlayerOne? Piece(color, i+3, j, false) : Piece(color, i, j,false);
-                            pieces.push_back(newPiece);
-                        }
-                    }
-                    else {
-                        if (j % 2 == 0) {
-                            Piece newPiece = isPlayerOne? Piece(color, i+3, j, false) : Piece(color,i,j, false);
-                            pieces.push_back(newPiece);
-                        }
-                    }
-                }
-            }
-    }
+    //vector<Piece> pieces;
+    //void SetupPieces(char color, bool isPlayerOne){/*, int boardSize, int rowsOfPieces, bool isPlayerOne) {*/
+    //    playerColor = color;
+    //        for (int i = 0; i < 8; i++) {
+    //            for (int j = 0; j < 3; j++) {
+    //                if (i % 2 == 0) {
+    //                    if (j % 2 != 0) {
+    //                        Piece newPiece = isPlayerOne ? Piece(color, i+5, j, false) : Piece(color, i, j,false);
+    //                        pieces.push_back(newPiece);
+    //                    }
+    //                }
+    //                else {
+    //                    if (j % 2 == 0) {
+    //                        Piece newPiece = isPlayerOne ? Piece(color, i+5, j, false) : Piece(color,i,j, false);
+    //                        pieces.push_back(newPiece);
+    //                    }
+    //                }
+    //            }
+    //        }
+    //}
 };
 
 int main()
 {
     cout << "Welcome to the Game of Checkers!" << "\n\n";
     int boardSize = 8;
+    char playerOneColor = 'r';
+    char PlayerTwoColor = 'b';
     Board gameBoard;
     gameBoard.DrawBoardWithoutPieces(8);
+    //gameBoard.DrawBoard(8,playerOneColor,PlayerTwoColor);
     return 0;
 }
 
