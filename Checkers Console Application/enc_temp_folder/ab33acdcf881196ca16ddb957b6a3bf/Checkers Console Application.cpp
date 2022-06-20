@@ -10,7 +10,7 @@ private:
     int rowNum, columnNum;
     bool isOccupied, isKing;
     char occupiedPieceColor = ' ';
-    char emptySymbol = ' ';
+    //char emptySymbol = ' ';
 
 public:
     vector<PlayTile*> moveTiles; //These are tiles that one diagonal away.
@@ -30,7 +30,7 @@ public:
         isKing = _isKing;
     }
 
-    void SetOccupied(bool _isOccupied, char color) {
+    void SetOccupied(bool _isOccupied, char color = ' ') {
         isOccupied = _isOccupied;
         occupiedPieceColor = color;
     }
@@ -44,11 +44,8 @@ public:
     }
 
     void Draw() {
-        if (isOccupied) {
-            if (isKing) occupiedPieceColor = toupper(occupiedPieceColor);
-            cout << " (" << occupiedPieceColor << ") ";
-        }
-        else cout << " (" << emptySymbol << ") ";
+        if (isKing && isOccupied) occupiedPieceColor = toupper(occupiedPieceColor);
+        cout << " (" << occupiedPieceColor << ") ";
     }
 
     int GetRowNumber() {
@@ -235,9 +232,12 @@ public:
     char playerColor;
     Board* gameBoard = nullptr;
     vector<PlayTile*> movablePieces;
-    int upDirection;
+    int upDirection = 0;
+
     Player() {
         playerColor = ' ';
+        upDirection = 0;
+        gameBoard = nullptr;
     }
     Player(char _playerColor,Board* board,int direction) {
         playerColor = _playerColor;
@@ -280,7 +280,7 @@ public:
         vector<PlayTile*> jumpTiles = FindPossibleJumps(currPlayTile);
         
         if (isMyPiece(currPlayTile) && jumpTiles.size()) {
-            cout << "Available squares to jump are: " << endl;
+            cout << "There are jumps available! Available squares to jump are: " << endl;
             for (auto it = jumpTiles.begin(); it != jumpTiles.end(); it++) {
                 // found nth element..print and break.
                 auto& jumpTile = *it;
@@ -288,7 +288,6 @@ public:
             }
             cout << endl;
         }
-        else cout << "There are no available jump!" << endl;
     }
    
     void UpdateMovablePieces() {
@@ -321,7 +320,7 @@ public:
         PlayTile* jumpee;
         vector<PlayTile*> results;
         if (isMyPiece(currPlayTile)) {
-            for (int i = 0; i < currPlayTile->moveTiles.size(); i++) {
+            for (int i = 0; i < currPlayTile->jumpTiles.size(); i++) {
                 jumpee = currPlayTile->jumpTiles[i].first;
                 possibleJumpTile = currPlayTile->jumpTiles[i].second;
                 //Below are the conditions for the possible jumpTile to jump the jumpee
@@ -335,28 +334,53 @@ public:
     void MovePiece(int fromIndex, int toIndex) {
         PlayTile* fromTile = &gameBoard->playableTiles[fromIndex]; //pointing to our playtile at index. If this variable changes our object in array at index changes.
         PlayTile* toTile = &gameBoard->playableTiles[toIndex];
-
-        if (isMyPiece(fromTile) && !toTile->GetOccupance() && fromTile->GetOccupance()) {
-            toTile->SetOccupied(fromTile->GetOccupance(), fromTile->GetOccupiedColor());
-            fromTile->SetOccupied(false, ' ');
-        }
+        MovePiece(fromTile, toTile);
     }
-
+    
     void MovePiece(PlayTile* fromTile, PlayTile* toTile) {
-        if (isMyPiece(fromTile) && !toTile->GetOccupance() && fromTile->GetOccupance()) {
-            toTile->SetOccupied(fromTile->GetOccupance(), fromTile->GetOccupiedColor());
-            fromTile->SetOccupied(false, ' ');
+        if (isMyPiece(fromTile)) {
+            PlayTile* jumpee;
+            for (int i = 0; i < fromTile->jumpTiles.size(); i++) {
+                if (toTile == fromTile->jumpTiles[i].second) {
+                    jumpee = fromTile->jumpTiles[i].first;
+                    toTile = fromTile->jumpTiles[i].second;
+                    //Below are the conditions for the possible jump tile to jump the jumpee
+                    toTile->SetOccupied(fromTile->GetOccupance(), fromTile->GetOccupiedColor());
+                    fromTile->SetOccupied(false);
+                    jumpee->SetOccupied(false);
+                    return;
+                }
+            }
+            if (isMyPiece(fromTile) && !toTile->GetOccupance() && fromTile->GetOccupance()) {
+                toTile->SetOccupied(fromTile->GetOccupance(), fromTile->GetOccupiedColor());
+                fromTile->SetOccupied(false);
+            }
         }
     }
 
     void FindPlayTileToMove() {
         UpdateMovablePieces();
+        PlayTile* from;
+        PlayTile* to;
         if (movablePieces.size()) {
-            PlayTile* from = movablePieces[0];
+            for (int i = 0; i < movablePieces.size(); i++) {
+                from = movablePieces[i];
+                vector<PlayTile*> possibleJumps = FindPossibleJumps(from);
+                if (possibleJumps.size()) {
+                    to = possibleJumps[0];
+                    cout << "Computer jumped from " << gameBoard->GetPlayTileNumber(from) << " to " << gameBoard->GetPlayTileNumber(to) << endl;
+                    MovePiece(from, to);
+                    return;
+                }
+            }
+            from = movablePieces[0];
             vector<PlayTile*> possibleMoves = FindPossibleMoves(from);
-            PlayTile* to = possibleMoves[0];
-            MovePiece(from, to);
-            cout << "Computer moved " << gameBoard->GetPlayTileNumber(from) << " to " << gameBoard->GetPlayTileNumber(to) << endl;
+            if (possibleMoves.size()) {
+                to = possibleMoves[0];
+                MovePiece(from, to);
+                cout << "Computer moved " << gameBoard->GetPlayTileNumber(from) << " to " << gameBoard->GetPlayTileNumber(to) << endl;
+                return;
+             }
         }
         else cout << "There are no available moves!" << endl;
     }
@@ -412,7 +436,7 @@ int main()
     playerTwo.SetPieces(0, 11);
     
     //gameBoard.SetupBoardPlaytiles(8, playerOne, playerTwo);
-    int input;
+    //int input;
     int from, to;
     while (true) {
 
