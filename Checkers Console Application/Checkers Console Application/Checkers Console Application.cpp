@@ -10,10 +10,11 @@ private:
     int rowNum, columnNum;
     bool isOccupied, isKing;
     char occupiedPieceColor = ' ';
-    char emptySymbol = '+';
+    char emptySymbol = ' ';
 
 public:
-    vector<PlayTile*> adjacentPlayTiles;
+    vector<PlayTile*> moveTiles; //These are tiles that one diagonal away.
+    vector<pair<PlayTile*, PlayTile*>> jumpTiles; //These are tiles that are exactly two diagonals away. I talked about this briefly in the interview.
 
     PlayTile() {
         rowNum = -1;
@@ -34,11 +35,15 @@ public:
         occupiedPieceColor = color;
     }
 
-    void AddAdjacentTile(PlayTile* adjacentPlayTile) {
-        if(adjacentPlayTile) adjacentPlayTiles.push_back(adjacentPlayTile);
+    void AddAdjacent(PlayTile* adjacentPlayTile) {
+        if(adjacentPlayTile) moveTiles.push_back(adjacentPlayTile);
+    }
+    
+    void AddJumpPair(PlayTile* adjTile, PlayTile* jumpTo) {
+        if (adjTile && jumpTo) jumpTiles.emplace_back(adjTile,jumpTo);
     }
 
-    void DrawTile() {
+    void Draw() {
         if (isOccupied) {
             if (isKing) occupiedPieceColor = toupper(occupiedPieceColor);
             cout << " (" << occupiedPieceColor << ") ";
@@ -52,12 +57,14 @@ public:
     int GetColumnNumber() {
         return columnNum;
     }
-
     char GetOccupiedColor() {
         return occupiedPieceColor;
     }
     bool GetOccupance() {
         return isOccupied;
+    }
+    bool GetPower() {
+        return isKing;
     }
 };
 
@@ -131,11 +138,11 @@ public:
             int i = playableTiles[index].GetRowNumber();
             int j = playableTiles[index].GetColumnNumber();
 
-            if (index % 4 == 0) cout << endl<<endl;
+            if (index % 4 == 0 && index >0) cout << endl<<endl;
 
             if (i % 2 == 0) {
                 if (j % 2 != 0) {
-                    playableTiles[index].DrawTile();
+                    playableTiles[index].Draw();
                     cout << counter++;
                     cout << "\t ----\t";
                 }
@@ -143,7 +150,7 @@ public:
             else {
                 if (j % 2 == 0) {
                     cout << " ----\t";
-                    playableTiles[index].DrawTile();
+                    playableTiles[index].Draw();
                     cout <<counter++;
                     cout << "\t";
                 }
@@ -179,14 +186,19 @@ public:
             currTile = &playableTiles[i];
             int row = currTile->GetRowNumber();
             int column = currTile->GetColumnNumber();
-            currTile->AddAdjacentTile(GetPlayTile(row - 1, column - 1)); //diagonal up to left
-            currTile->AddAdjacentTile(GetPlayTile(row - 1, column + 1)); //diagonal up to right
-            currTile->AddAdjacentTile(GetPlayTile(row + 1, column - 1)); //diagonal down to left
-            currTile->AddAdjacentTile(GetPlayTile(row + 1, column + 1)); //diagonal down to right
+            currTile->AddAdjacent(GetPlayTile(row - 1, column - 1)); //diagonal up to left
+            currTile->AddAdjacent(GetPlayTile(row - 1, column + 1)); //diagonal up to right
+            currTile->AddAdjacent(GetPlayTile(row + 1, column - 1)); //diagonal down to left
+            currTile->AddAdjacent(GetPlayTile(row + 1, column + 1)); //diagonal down to right
+            
+            currTile->AddJumpPair(GetPlayTile(row - 1, column - 1),GetPlayTile(row - 2, column - 2));
+            currTile->AddJumpPair(GetPlayTile(row - 1, column + 1),GetPlayTile(row - 2, column + 2));
+            currTile->AddJumpPair(GetPlayTile(row + 1, column - 1), GetPlayTile(row + 2, column - 2));
+            currTile->AddJumpPair(GetPlayTile(row + 1, column + 1), GetPlayTile(row + 2, column + 2));
         }
     }
 
-    PlayTile* GetPlayTile(int i, int j) {
+    PlayTile* GetPlayTile(int i, int j) { //very powerful function
         for (int index = 0; index < 32; index++) {
             if (i == playableTiles[index].GetRowNumber() && j == playableTiles[index].GetColumnNumber()) return &playableTiles[index];
         }
@@ -223,13 +235,14 @@ public:
     char playerColor;
     Board* gameBoard = nullptr;
     vector<PlayTile*> movablePieces;
-
+    int upDirection;
     Player() {
         playerColor = ' ';
     }
-    Player(char _playerColor,Board* board) {
+    Player(char _playerColor,Board* board,int direction) {
         playerColor = _playerColor;
         gameBoard = board;
+        upDirection = direction;
     }
 
     /*void SetBoard(Board board) {
@@ -247,17 +260,37 @@ public:
     }
 
     void DisplayPossibleMoves(PlayTile* currPlayTile) {
-        if (isMyPiece(currPlayTile)) {
+        vector <PlayTile*>::iterator it;
+        vector<PlayTile*> possibleMoveTiles = FindPossibleMoves(currPlayTile);
+
+        if (isMyPiece(currPlayTile) && possibleMoveTiles.size()) {
             PlayTile* adjTile;
-            cout << "Available squares to move are: "<< endl;
-            for (int i = 0; i < currPlayTile->adjacentPlayTiles.size(); i++) {
-                adjTile = currPlayTile->adjacentPlayTiles[i];
-                if(!adjTile->GetOccupance()) cout << gameBoard->GetPlayTileNumber(adjTile) << " ";
-            } 
+            cout << "Available squares to move are: " << endl;
+            for (int i = 0; i < possibleMoveTiles.size(); i++) {
+                adjTile = possibleMoveTiles[i];
+                if (!adjTile->GetOccupance()) cout << gameBoard->GetPlayTileNumber(adjTile) << " ";
+            }
             cout << endl;
         }
+        else cout << "There are no available moves!" << endl;
     }
 
+    void DisplayPossibleJumps(PlayTile* currPlayTile) {
+        vector <PlayTile*>::iterator it;
+        vector<PlayTile*> jumpTiles = FindPossibleJumps(currPlayTile);
+        
+        if (isMyPiece(currPlayTile) && jumpTiles.size()) {
+            cout << "Available squares to jump are: " << endl;
+            for (auto it = jumpTiles.begin(); it != jumpTiles.end(); it++) {
+                // found nth element..print and break.
+                auto& jumpTile = *it;
+                cout << gameBoard->GetPlayTileNumber(jumpTile) << " ";
+            }
+            cout << endl;
+        }
+        else cout << "There are no available jump!" << endl;
+    }
+   
     void UpdateMovablePieces() {
         movablePieces.clear();
         PlayTile* currTile;
@@ -268,12 +301,32 @@ public:
     }
 
     vector<PlayTile*> FindPossibleMoves(PlayTile* currPlayTile) {
-        PlayTile* possibleTile;
+        PlayTile* possibleMoveTile;
+        vector<PlayTile*> results;
+
+        if (isMyPiece(currPlayTile)) {
+            for (int i = 0; i < currPlayTile->moveTiles.size(); i++) {
+                possibleMoveTile = currPlayTile->moveTiles[i];
+                int rowDifference = currPlayTile->GetRowNumber() - possibleMoveTile->GetRowNumber();
+                if (rowDifference*upDirection > 0 || currPlayTile->GetPower()) {
+                    if (!possibleMoveTile->GetOccupance()) results.push_back(possibleMoveTile);
+                }
+            }
+        }
+        return results;
+    }
+
+    vector<PlayTile*> FindPossibleJumps(PlayTile* currPlayTile) {
+        PlayTile* possibleJumpTile;
+        PlayTile* jumpee;
         vector<PlayTile*> results;
         if (isMyPiece(currPlayTile)) {
-            for (int i = 0; i < currPlayTile->adjacentPlayTiles.size(); i++) {
-                possibleTile = currPlayTile->adjacentPlayTiles[i];
-                if (!possibleTile->GetOccupance()) results.push_back(possibleTile);
+            for (int i = 0; i < currPlayTile->jumpTiles.size(); i++) {
+                jumpee = currPlayTile->jumpTiles[i].first;
+                possibleJumpTile = currPlayTile->jumpTiles[i].second;
+                //Below are the conditions for the possible jumpTile to jump the jumpee
+                if (!possibleJumpTile->GetOccupance() && jumpee->GetOccupance() && !isMyPiece(jumpee))
+                    results.push_back(possibleJumpTile);
             }
         }
         return results;
@@ -295,11 +348,24 @@ public:
             fromTile->SetOccupied(false, ' ');
         }
     }
+    
+    void JumpPiece(PlayTile* fromTile, PlayTile* toTile) {
+        if (isMyPiece(fromTile) && !toTile->GetOccupance() && fromTile->GetOccupance()) {
+            toTile->SetOccupied(fromTile->GetOccupance(), fromTile->GetOccupiedColor());
+            fromTile->SetOccupied(false, ' ');
+        }
+    }
 
     void FindPlayTileToMove() {
         UpdateMovablePieces();
-        PlayTile* from = movablePieces[0];
-        //PlayTile* to = 
+        if (movablePieces.size()) {
+            PlayTile* from = movablePieces[0];
+            vector<PlayTile*> possibleMoves = FindPossibleMoves(from);
+            PlayTile* to = possibleMoves[0];
+            MovePiece(from, to);
+            cout << "Computer moved " << gameBoard->GetPlayTileNumber(from) << " to " << gameBoard->GetPlayTileNumber(to) << endl;
+        }
+        else cout << "There are no available moves!" << endl;
     }
 
     /* void MakeMove() {
@@ -339,21 +405,20 @@ int main()
     char playerOneColor;
     char playerTwoColor;
     Board gameBoard;
-    gameBoard.BoardSetup(8);
+    gameBoard.BoardSetup(8); //board starts out as empty.
 
     Player playerOne, playerTwo;
-    cout << "What character would you like for your piece?" << endl;
+    cout << "What character would you like for your pieces?" << endl;
     cin >> playerOneColor;
-    playerOne = Player(tolower(playerOneColor),&gameBoard);
+    playerOne = Player(tolower(playerOneColor),&gameBoard,1);
     playerOne.SetPieces(20, 31);
     cout << "What character would you like the computer to have?" << endl;
     cin >> playerTwoColor;
-    playerTwo = Player(tolower(playerTwoColor),&gameBoard);
+    cout << endl;
+    playerTwo = Player(tolower(playerTwoColor),&gameBoard,-1);
     playerTwo.SetPieces(0, 11);
     
     //gameBoard.SetupBoardPlaytiles(8, playerOne, playerTwo);
-    bool playerOneTurn = true;
-    
     int input;
     int from, to;
     while (true) {
@@ -361,12 +426,15 @@ int main()
         gameBoard.DrawBoard();
         //gameBoard.DrawBoardWithoutPieces(8);
         //playerOne.MakeMove();
+        cout << "It is your turn" << endl;
         cin >> from;
+        if (!from) break;
         playerOne.DisplayPossibleMoves(gameBoard.GetPlayTile(from-1));
+        playerOne.DisplayPossibleJumps(gameBoard.GetPlayTile(from - 1));
         cin >> to;
-        if (playerOneTurn) playerOne.MovePiece(from-1, to-1);
-        else playerTwo.MovePiece(from-1, to-1);
-        playerOneTurn = !playerOneTurn;
+        playerOne.MovePiece(from-1, to-1);
+        cout << endl;
+        playerTwo.FindPlayTileToMove();
 
         //cout << "It is now Player 2's turn" << endl;
         //gameBoard.MovePiece(from, to);
