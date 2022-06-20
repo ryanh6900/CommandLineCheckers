@@ -333,6 +333,7 @@ public:
     }
 
     void MovePiece(int fromIndex, int toIndex) {
+        UpdateMovablePieces();
         PlayTile* fromTile = &gameBoard->playableTiles[fromIndex]; //pointing to our playtile at index. If this variable changes our object in array at index changes.
         PlayTile* toTile = &gameBoard->playableTiles[toIndex];
         MovePiece(fromTile, toTile);
