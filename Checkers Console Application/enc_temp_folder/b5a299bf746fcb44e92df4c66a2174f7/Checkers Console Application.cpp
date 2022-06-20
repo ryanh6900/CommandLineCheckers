@@ -269,9 +269,6 @@ public:
         }
     }
 
-    void FindPlayTileToMove() {
-        
-    }
 
     /* void MakeMove() {
          cin >> from;
@@ -313,11 +310,11 @@ int main()
     gameBoard.BoardSetup(8);
 
     Player playerOne, playerTwo;
-    cout << "What character would you like for your piece?" << endl;
+    cout << "What color is Player One?" << endl;
     cin >> playerOneColor;
     playerOne = Player(tolower(playerOneColor),&gameBoard);
     playerOne.SetPieces(20, 31);
-    cout << "What character would you like the computer to have?" << endl;
+    cout << "What color is Player Two?" << endl;
     cin >> playerTwoColor;
     playerTwo = Player(tolower(playerTwoColor),&gameBoard);
     playerTwo.SetPieces(0, 11);
