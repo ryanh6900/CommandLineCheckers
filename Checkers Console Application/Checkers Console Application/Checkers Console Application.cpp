@@ -243,11 +243,10 @@ public:
         for(int i = start; i <= end; i++) {
             PlayTile* playerPiece = &gameBoard->playableTiles[i];
             playerPiece->SetOccupied(true, playerColor);
-            movablePieces.push_back(playerPiece);
         }
     }
- 
-    void FindMoves(PlayTile* currPlayTile) {
+
+    void DisplayPossibleMoves(PlayTile* currPlayTile) {
         if (isMyPiece(currPlayTile)) {
             PlayTile* adjTile;
             cout << "Available squares to move are: "<< endl;
@@ -257,6 +256,27 @@ public:
             } 
             cout << endl;
         }
+    }
+
+    void UpdateMovablePieces() {
+        movablePieces.clear();
+        PlayTile* currTile;
+        for (int i = 0; i < 32; i++) {
+            currTile = gameBoard->GetPlayTile(i);
+            if(FindPossibleMoves(currTile).size()) movablePieces.push_back(currTile);
+        }
+    }
+
+    vector<PlayTile*> FindPossibleMoves(PlayTile* currPlayTile) {
+        PlayTile* possibleTile;
+        vector<PlayTile*> results;
+        if (isMyPiece(currPlayTile)) {
+            for (int i = 0; i < currPlayTile->adjacentPlayTiles.size(); i++) {
+                possibleTile = currPlayTile->adjacentPlayTiles[i];
+                if (!possibleTile->GetOccupance()) results.push_back(possibleTile);
+            }
+        }
+        return results;
     }
 
     void MovePiece(int fromIndex, int toIndex) {
@@ -269,8 +289,17 @@ public:
         }
     }
 
+    void MovePiece(PlayTile* fromTile, PlayTile* toTile) {
+        if (isMyPiece(fromTile) && !toTile->GetOccupance() && fromTile->GetOccupance()) {
+            toTile->SetOccupied(fromTile->GetOccupance(), fromTile->GetOccupiedColor());
+            fromTile->SetOccupied(false, ' ');
+        }
+    }
+
     void FindPlayTileToMove() {
-        
+        UpdateMovablePieces();
+        PlayTile* from = movablePieces[0];
+        //PlayTile* to = 
     }
 
     /* void MakeMove() {
@@ -333,7 +362,7 @@ int main()
         //gameBoard.DrawBoardWithoutPieces(8);
         //playerOne.MakeMove();
         cin >> from;
-        playerOne.FindMoves(gameBoard.GetPlayTile(from-1));
+        playerOne.DisplayPossibleMoves(gameBoard.GetPlayTile(from-1));
         cin >> to;
         if (playerOneTurn) playerOne.MovePiece(from-1, to-1);
         else playerTwo.MovePiece(from-1, to-1);
