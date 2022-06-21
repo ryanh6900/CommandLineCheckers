@@ -1,9 +1,7 @@
 
 /*
-Command Line Checkers Game
-
-Filename: Checkers Program from EA interview
-Date: 6/16/2022
+Name: Command Line Checkers Program from EA interview
+Date: 6/17/2022
 Author: Ryan Houston
 
 
@@ -323,6 +321,7 @@ private:
     vector<PlayTile*> movablePieces;
     int upDirection = 0;
     int pieceCount;
+    bool playerIsMad; //a little humor
 public:
     Player() {
         playerColor = ' ';
@@ -352,6 +351,15 @@ public:
             playerPiece->SetOccupied(true, playerColor);
         }
     }
+    void ResignAndKnockPiecesOffBoard() {
+        for (int i = 0; i < 32; i++)
+            if (toupper(gameBoard->playableTiles[i].GetOccupiedColor()) == toupper(playerColor))
+                gameBoard->playableTiles[i].SetOccupied(false);
+        playerIsMad = true;
+    }
+    bool IsAGoodPlayer() {
+        return !playerIsMad;
+    }
     int GetPieceCount() {
         pieceCount = 0;
         for (int i = 0; i < 32; i++) {
@@ -360,6 +368,7 @@ public:
         }
         return pieceCount;
     }
+
     void DisplayPossibleMoves(PlayTile* currPlayTile) {
         vector <PlayTile*>::iterator it;
         vector<PlayTile*> possibleMoveTiles = FindPossibleMoves(currPlayTile);
@@ -565,7 +574,7 @@ int main()
     bool hintsOn;
     bool autoPlaying;
     bool fromIsValid, toIsValid;
-    bool gameOver;
+    bool donePlaying, playerResigning;
     Board gameBoard;
 
     Player playerOne, playerTwo;
@@ -577,19 +586,19 @@ int main()
 
     cout << "What is your name?" << endl;
     getline(cin, playerName);
-    cout << "\n" << playerName << ", What character would you like for your pieces?" << endl;
+    cout << "\n" << playerName << ", what character would you like for your pieces?" << endl;
     getline(cin, input);
     playerOneColor = input.empty() ? 'R' : input[0];
     playerOne = Player(tolower(playerOneColor), &gameBoard, 1, playerName);
     playerOne.SetPieces(20, 31);
 
-    cout << "\n" << playerName << ", What character would you like the computer to have?" << endl;
+    cout << "\n" << playerName << ", what character would you like the computer to have?" << endl;
     getline(cin, input);
     playerTwoColor = input.empty() ? 'B' : input[0];
     playerTwo = Player(tolower(playerTwoColor), &gameBoard, -1, "Computer");
     playerTwo.SetPieces(0, 11);
 
-    cout << "\n" << playerName << ", Are you new to Checkers? (Answer Y/N)" << endl;
+    cout << "\n" << playerName << ", are you new to Checkers? (Y/N)" << endl;
     getline(cin, input);
 
     if (toupper(input[0]) == 'Y') {
@@ -601,28 +610,53 @@ int main()
         cout << "\n" << "*Hints Disabled*" << endl;
     }
     
-
-    gameOver = false;
+    playerResigning = false;
+    donePlaying = false;
     //Main Game Loop
-    while (!gameOver) {
-
-        gameBoard.DrawFormattedBoard();
-        //gameBoard.DrawBoardWithoutPieces(8);
-        //playerOne.MakeMove();
+    while (!donePlaying) {
+        if (playerOne.GetPieceCount() == 0 || playerTwo.GetPieceCount() == 0) {
+            string winnerName = (playerOne.GetPieceCount()==0 && !playerOne.IsAGoodPlayer()) ? playerTwo.GetName() : playerOne.GetName();
+            cout << "\nGAMEOVER!\nThe winner is " << winnerName << "!\nWould you like to play again? (Y/N) " << endl;
+            getline(cin, input);
+            if (toupper(input[0]) == 'Y') {
+                gameBoard.BoardSetup(8);
+                playerTwo.SetPieces(0, 11);
+                playerOne.SetPieces(20, 31);
+                cout << "Would you like hints this time? (Y/N)" << endl;
+                if (toupper(input[0]) == 'Y') {
+                    hintsOn = true;
+                    cout << "\n" << "*Hints Enabled*" << endl;
+                }
+                else {
+                    hintsOn = false;
+                    cout << "\n" << "*Hints Disabled*" << endl;
+                }
+                playerResigning = false;
+            }
+            else donePlaying = true;
+        }
         fromIsValid = false;
         toIsValid = false;
         autoPlaying = false;
 
+        gameBoard.DrawFormattedBoard();
         cout << "You have " << playerOne.GetPieceCount() << " pieces left | The Computer has " 
             << playerTwo.GetPieceCount() << " pieces left...";
         if (playerOne.GetPieceCount() > playerTwo.GetPieceCount()) cout << "YOU ARE WINNING IN MATERIAL!" << endl;
         else if (playerOne.GetPieceCount() == playerTwo.GetPieceCount()) cout << "The material is even." << endl;
         else cout << "You are losing in material." << endl;
         cout << "It is your turn, " << playerOne.GetName() << endl;
-        if(hintsOn) cout << ".\nEnter the number for the tile you would like to move, then enter the tile you would like to move to." << endl;
-        while (!fromIsValid && !autoPlaying) {
+        if(hintsOn) cout << ".\nEnter the number for the tile you would like to move, then enter the tile you would like to move to. Type 'resign' to start over" << endl;
+
+        while (!fromIsValid && !autoPlaying && !playerResigning) {
+
             getline(cin, fromString);
-            if (playerOne.CheckFrom(fromString)) {
+
+            if (!fromString.compare("resign")) {
+                playerOne.ResignAndKnockPiecesOffBoard();
+                playerResigning = true;
+            }
+            else if (playerOne.CheckFrom(fromString)) {
               
                 fromIsValid = true;
             }
@@ -631,6 +665,7 @@ int main()
                 else cout << "That is not a valid move. Please try again." << endl;
             }
         }
+        if (playerResigning) continue;
         if (hintsOn && !autoPlaying) {
             playerOne.DisplayPossibleMoves(gameBoard.GetPlayTile(fromString));
             playerOne.DisplayPossibleJumps(gameBoard.GetPlayTile(fromString));
