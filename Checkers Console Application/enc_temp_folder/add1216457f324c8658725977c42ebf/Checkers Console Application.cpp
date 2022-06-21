@@ -657,6 +657,7 @@ int main()
             playerOne.MovePiece(from, to);
         }
         playerTwo.AutoMove();
+       
     }
     return 0;
 }
