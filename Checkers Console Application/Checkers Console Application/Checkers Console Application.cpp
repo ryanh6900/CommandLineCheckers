@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <vector>
+#include <string>
 using namespace std;
 //Remember to model abstractions after real-world concepts within the game of checkers.
 class PlayTile {
@@ -242,7 +243,7 @@ public:
         gameBoard = nullptr;
         name = "";
     }
-    Player(char _playerColor,Board* board,int direction, string _name) {
+    Player(char _playerColor,Board* board,int direction, string _name = "Human") {
         playerColor = _playerColor;
         gameBoard = board;
         upDirection = direction;
@@ -255,7 +256,7 @@ public:
         gameBoard = board;
     }*/
     bool isMyPiece(PlayTile* playTile) {
-        if (playTile && playTile->GetOccupiedColor() == playerColor) return true;
+        if (playTile && toupper(playTile->GetOccupiedColor()) == toupper(playerColor)) return true;
         return false;
     }
     void SetPieces(int start, int end) { //this needs to be called once. movablepieces does not change even when player makes moves, only the position of tiles changes.
@@ -314,9 +315,11 @@ public:
             for (int i = 0; i < currPlayTile->moveTiles.size(); i++) {
                 possibleMoveTile = currPlayTile->moveTiles[i];
                 int rowDifference = currPlayTile->GetRowNumber() - possibleMoveTile->GetRowNumber();
-                if (rowDifference*upDirection > 0 || currPlayTile->GetPower()) {
-                    if (!possibleMoveTile->GetOccupance()) results.push_back(possibleMoveTile);
+                if (!possibleMoveTile->GetOccupance()) {
+                        if (currPlayTile->GetPower()) results.insert(results.begin(), possibleMoveTile);
+                        else if (rowDifference * upDirection > 0) results.push_back(possibleMoveTile);  
                 }
+                
             }
         }
         return results;
@@ -333,7 +336,8 @@ public:
                 int rowDifference = currPlayTile->GetRowNumber() - possibleJumpTile->GetRowNumber();
                 //Below are the conditions for the possible jumpTile to jump the jumpee
                 if (!possibleJumpTile->GetOccupance() && jumpee->GetOccupance() && !isMyPiece(jumpee))
-                    if (rowDifference * upDirection > 0 || currPlayTile->GetPower()) results.push_back(possibleJumpTile);
+                    if (currPlayTile->GetPower())results.insert(results.begin(), possibleJumpTile);
+                    else if (rowDifference * upDirection > 0) results.push_back(possibleJumpTile);
             }
         }
         return results;
@@ -353,7 +357,6 @@ public:
                 if (toTile == fromTile->jumpTiles[i].second) {
                     jumpee = fromTile->jumpTiles[i].first;
                     toTile = fromTile->jumpTiles[i].second;
-                    //Below are the conditions for the possible jump tile to jump the jumpee
                     toTile->SetOccupied(fromTile->GetOccupance(), fromTile->GetOccupiedColor(), CheckForKing(toTile));
                     fromTile->SetOccupied(false);
                     jumpee->SetOccupied(false);
@@ -369,34 +372,36 @@ public:
 
     bool CheckForKing(PlayTile* toTile) {
         if (toTile->GetRowNumber() == 1 || toTile->GetRowNumber() == 8) {
-            cout << "KingToUpgrade " << gameBoard->GetPlayTileNumber(toTile) << endl;
+            //cout << "KingToUpgrade " << gameBoard->GetPlayTileNumber(toTile) << endl;
             return true;
         }
         return false;
     }
+
     void AutoMove() { //This is the function that is called for the computer aka playerTwo.
         UpdateMovablePieces();
-        PlayTile* from;
-        PlayTile* to;
+        PlayTile* fromTile;
+        PlayTile* toTile;
         if (movablePieces.size()) {
             for (int i = 0; i < movablePieces.size(); i++) {
-                from = movablePieces[i];
-                vector<PlayTile*> possibleJumps = FindPossibleJumps(from);
+                fromTile = movablePieces[i];
+                vector<PlayTile*> possibleJumps = FindPossibleJumps(fromTile); //move priority goes to jump moves.
                 if (possibleJumps.size()) {
-                    to = possibleJumps[0];
-                    cout << name<< " jumped from " << gameBoard->GetPlayTileNumber(from) << " to " << gameBoard->GetPlayTileNumber(to) << endl;
-                    MovePiece(from, to);
+                    toTile = possibleJumps[0];
+                    cout << name << " jumped from " << gameBoard->GetPlayTileNumber(fromTile) << " to " << gameBoard->GetPlayTileNumber(toTile) << endl;
+                        //<< ", taking the " << << endl;
+                    MovePiece(fromTile, toTile);
                     return;
                 }
             }
             int randNumber = rand() % movablePieces.size();
-            cout << randNumber << " " << movablePieces.size() << " " << endl;
-            from = movablePieces[randNumber];
-            vector<PlayTile*> possibleMoves = FindPossibleMoves(from);
+            //cout << randNumber << " " << movablePieces.size() << " " << endl;
+            fromTile = movablePieces[randNumber];
+            vector<PlayTile*> possibleMoves = FindPossibleMoves(fromTile); //if not jump moves, priority moves to regular moves.
             if (possibleMoves.size()) {
-                to = possibleMoves[0];
-                MovePiece(from, to);
-                cout << name << " moved " << gameBoard->GetPlayTileNumber(from) << " to " << gameBoard->GetPlayTileNumber(to) << endl;
+                toTile = possibleMoves[0];
+                MovePiece(fromTile, toTile);
+                cout << name << " moved " << gameBoard->GetPlayTileNumber(fromTile) << " to " << gameBoard->GetPlayTileNumber(toTile) << endl;
                 return;
              }
         }
@@ -442,25 +447,40 @@ int main()
     int boardSize = 8;
     char playerOneColor;
     char playerTwoColor;
+    char noviceAnswer;
+    bool hintsOn;
     Board gameBoard;
-    gameBoard.BoardSetup(8); //board starts out as empty.
-    string name;
+    int gameMode;
+    
+    string playerName;
     cout << "What is your name?" << endl;
-    cin >> name;
+    getline(cin, playerName);
     Player playerOne, playerTwo;
-    cout << name<<", What character would you like for your pieces?" << endl;
+    cout << "\n"<<playerName << ", What character would you like for your pieces?" << endl;
     cin >> playerOneColor;
-    playerOne = Player(tolower(playerOneColor),&gameBoard,1,name);
+    gameBoard.BoardSetup(8); //board starts out as empty.
+    playerOne = Player(tolower(playerOneColor),&gameBoard,1,playerName);
     playerOne.SetPieces(20, 31);
-    cout << name<< ", What character would you like the computer to have?" << endl;
+    cout << "\n" << playerName<< ", What character would you like the computer to have?" << endl;
     cin >> playerTwoColor;
-    cout << endl;
+    cout << "\n" << playerName << ", Are you new to Checkers? (Answer Y/N)" << endl;
+    cin >> noviceAnswer;
+    noviceAnswer = (char) toupper(noviceAnswer);
+    if (noviceAnswer == 'Y') {
+        hintsOn = true;
+        cout << "Hints Enabled" << endl;
+    }
+    else {
+        hintsOn = false;
+        cout << "Hints Disabled" << endl;
+    }
+
     playerTwo = Player(tolower(playerTwoColor),&gameBoard,-1,"Computer");
     playerTwo.SetPieces(0, 11);
     
     //gameBoard.SetupBoardPlaytiles(8, playerOne, playerTwo);
     //int input;
-    int from, to;
+    int from, to, toAssisted;
     while (true) {
 
         gameBoard.DrawBoard();
@@ -469,12 +489,16 @@ int main()
         cout << "It is your turn, " << playerOne.GetName() <<"." << endl;
         cin >> from;
         if (from == 0) playerOne.AutoMove();
-        else {
+        if(hintsOn) {
             playerOne.DisplayPossibleMoves(gameBoard.GetPlayTile(from - 1));
             playerOne.DisplayPossibleJumps(gameBoard.GetPlayTile(from - 1));
+            cin >> toAssisted;
+            playerOne.MovePiece(from - 1, toAssisted - 1);
+            cout << endl;
+        }
+        else {
             cin >> to;
             playerOne.MovePiece(from - 1, to - 1);
-            cout << endl;
         }
         playerTwo.AutoMove();
 
