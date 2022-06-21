@@ -586,6 +586,7 @@ int main()
 
     cout << "What is your name?" << endl;
     getline(cin, playerName);
+    playerName.erase(remove(playerName.begin(), playerName.end(), ' '), playerName.end());
     cout << "\n" << playerName << ", what character would you like for your pieces?" << endl;
     getline(cin, input);
     playerOneColor = input.empty() ? 'R' : input[0];
@@ -623,6 +624,7 @@ int main()
                 playerTwo.SetPieces(0, 11);
                 playerOne.SetPieces(20, 31);
                 cout << "Would you like hints this time? (Y/N)" << endl;
+                getline(cin, input);
                 if (toupper(input[0]) == 'Y') {
                     hintsOn = true;
                     cout << "\n" << "*Hints Enabled*" << endl;
@@ -645,8 +647,8 @@ int main()
         if (playerOne.GetPieceCount() > playerTwo.GetPieceCount()) cout << "YOU ARE WINNING IN MATERIAL!" << endl;
         else if (playerOne.GetPieceCount() == playerTwo.GetPieceCount()) cout << "The material is even." << endl;
         else cout << "You are losing in material." << endl;
-        cout << "It is your turn, " << playerOne.GetName() << endl;
-        if(hintsOn) cout << ".\nEnter the number for the tile you would like to move, then enter the tile you would like to move to. Type 'resign' to start over" << endl;
+        cout << "It is your turn, " << playerOne.GetName() << "." << endl;
+        if(hintsOn) cout << "Enter the number for the tile you would like to move, then enter the tile you would like to move to. \nType 'resign' to play again more quickly" << endl;
 
         while (!fromIsValid && !autoPlaying && !playerResigning) {
 
