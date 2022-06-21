@@ -1,8 +1,8 @@
 
 /*
-Name: Command Line Checkers Program from EA interview
-Date: 6/17/2022
-Author: Ryan Houston
+Name: Checkers Program from EA interview in Command Line
+Date: 6/19/2022
+Author: Ryan Houston https://github.com/ryanh6900
 
 
 This program plays the Game of Checkers, using text input and output, in a console window.
@@ -15,21 +15,24 @@ by the number of the square to move the piece to.
 The file includes the main program, and the follow classes:
 
 Key abstractions:
-
-PlayTile -- the class represents the playable squares on the game board. There are 32 PlayTiles on the board.
+PlayTile -- the class represents the playable squares on the game board. Even though there are 64 tiles on the board, we only use 32 of them. Therefore I created a class known as a Playtile.
 Player -- this class represents either a human player or the computer player
 Board -- this class represent the game board, and contains the 32 PlayTiles used in the game.
 
-Build instructions:  Compile with V11 support. For example:
-    g++ -std=c++11 -o checkers checkers.cpp
-    ./checkers.cpp
 
-Running the program:
+Build instructions:  Compile with V11 support. Dfter setting current directory to the folder containing this file, 
+run these two lines in powershell (or terminal for mac):
+
+    g++ -std=c++11 -o checkers checkers.cpp
+    ./checkers
+
+The Program:
 Player is promtped to enter their name and select a letter to label their peices on the board.
 For example: player enters the letter 'R', their pieces will be labeled (r) and (R) when "kinged".
 
 Moves are specified by entering to numbers, representing the "from" and "to" positions on the board.
 For example: 22 17
+You want to restart, simply type resign when prompted for your from tile and say you like to play again.
 
 Example board:
 
@@ -58,9 +61,9 @@ Example board:
 |     29|#######|     30|#######|     31|#######|     32|#######|
 |  (r)  |#######|  (r)  |#######|  (r)  |#######|  (r)  |#######|
 |-------|#######|-------|#######|-------|#######|-------|#######|
-
-
 */
+
+
 
 #include <iostream>
 #include <vector>
@@ -82,7 +85,6 @@ private:
     int rowNum, columnNum;
     bool isOccupied, isKing;
     char occupiedPieceColor = ' ';
-    //char emptySymbol = ' ';
 
 public:
     vector<PlayTile*> moveTiles; //These are tiles that one diagonal away.
@@ -141,7 +143,7 @@ public:
 /*********************
 
 Board
-
+Sets the algorithm for setting up the board, setting playtiles and all their adjacents, and drawing the board.
 **********************/
 
 class Board {
@@ -309,7 +311,8 @@ public:
 /*********************
 
 Player
-
+Responsible for placing pieces on the board and moving.
+If a move is double, or triple jump it will happen automatically.
 **********************/
 
 class Player {
@@ -338,9 +341,6 @@ public:
     string GetName() {
         return name;
     }
-    /*void SetBoard(Board board) {
-        gameBoard = board;
-    }*/
     bool isMyPiece(PlayTile* playTile) {
         if (playTile && toupper(playTile->GetOccupiedColor()) == toupper(playerColor)) return true;
         return false;
@@ -392,7 +392,6 @@ public:
         if (isMyPiece(currPlayTile) && jumpTiles.size()) {
             cout << "There are jumps available! Available squares to jump are: " << endl;
             for (auto it = jumpTiles.begin(); it != jumpTiles.end(); it++) {
-                // found nth element..print and break.
                 auto& jumpTile = *it;
                 cout << gameBoard->GetPlayTileNumber(jumpTile) << " ";
             }
@@ -454,7 +453,7 @@ public:
         MovePiece(fromTile, toTile);
     }
 
-    void CheckMultipleJump(PlayTile* toTile) {
+    void CheckMultipleJump(PlayTile* toTile) { //recursively call to MovePiece, how we check to double or triple jump.
         // find new jumps starting at the toTile from previous jump
         vector<PlayTile*> nextJumps = FindPossibleJumps(toTile);
         if (nextJumps.empty()) return;
@@ -475,7 +474,7 @@ public:
                     jumpee->SetOccupied(false);
                     cout << name << " jumped from " << gameBoard->GetPlayTileNumber(fromTile);
                     cout << " to " << gameBoard->GetPlayTileNumber(toTile) << endl;
-                    CheckMultipleJump(toTile); //recursively calls MovePiece if needed
+                    CheckMultipleJump(toTile); //recursively calls MovePiece if needed to do double, and even triple jumps.
                     return;
                 }
             }
@@ -489,10 +488,8 @@ public:
     }
 
     bool CheckForKing(PlayTile* toTile) {
-        if (toTile->GetRowNumber() == 1 || toTile->GetRowNumber() == 8) {
-            //cout << "KingToUpgrade " << gameBoard->GetPlayTileNumber(toTile) << endl;
+        if (toTile->GetRowNumber() == 1 || toTile->GetRowNumber() == 8)
             return true;
-        }
         return false;
     }
 
@@ -511,7 +508,6 @@ public:
                 }
             }
             int randNumber = rand() % movablePieces.size();
-            //cout << randNumber << " " << movablePieces.size() << " " << endl;
             fromTile = movablePieces[randNumber];
             vector<PlayTile*> possibleMoves = FindPossibleMoves(fromTile); //if not jump moves, priority moves to regular moves.
             if (possibleMoves.size()) {
@@ -526,14 +522,21 @@ public:
         }
 
     }
+   
+    bool CheckFrom(string str) {
+        if (CheckPlayTileInput(str) && CheckMoveAvailability(str)) return true;
+        return false;
+    }
+
+    bool CheckTo(string to, string from) {
+        if (CheckPlayTileInput(to) && CheckIsPossibleTo(to, from)) return true;
+        return false;
+    }
+
     bool CheckPlayTileInput(string str) {
         for (int i = 0; i < str.length(); i++)
             if (isdigit(str[i]))
                 return true;
-        return false;
-    }
-    bool CheckFrom(string str) {
-        if (CheckPlayTileInput(str) && CheckMoveAvailability(str)) return true;
         return false;
     }
 
@@ -547,7 +550,6 @@ public:
     }
 
     bool CheckIsPossibleTo(string toString, string fromString) {
-        cout << toString << " and " << fromString << endl;
         PlayTile* toPlayTile = gameBoard->GetPlayTile(toString);
         PlayTile* fromPlayTile = gameBoard->GetPlayTile(fromString);
         vector<PlayTile*> possibleMoves = FindPossibleMoves(fromPlayTile); 
@@ -557,30 +559,19 @@ public:
         if (it != possibleMoves.end() || it2 != possibleJumps.end()) return true;
         return false;
     }
-
-    bool CheckTo(string to, string from) {
-        if (CheckPlayTileInput(to) && CheckIsPossibleTo(to, from)) return true;
-        return false;
-    }
 };
 
-int main()
+int main() //alot of the game logic might not be the best. I wanted to focus on the cohesion between the main classes.
 {
-    cout << "Welcome to the Game of Checkers!" << "\n\n";
+    cout << "Welcome to the Game of Checkers!\nThis is the best version of command-line Checkers known to man\n\n";
     int boardSize = 8;
-    
     char playerOneColor;
     char playerTwoColor;
-    bool hintsOn;
-    bool autoPlaying;
-    bool fromIsValid, toIsValid;
-    bool donePlaying, playerResigning;
+    bool autoPlaying, donePlaying, playerResigning, hintsOn,fromIsValid,toIsValid;
     Board gameBoard;
-
     Player playerOne, playerTwo;
     string playerName;
     string input;
-    string buffer;
     string fromString, toString;
     gameBoard.BoardSetup(8);//board starts out as empty.
 
@@ -596,7 +587,7 @@ int main()
     cout << "\n" << playerName << ", what character would you like the computer to have?" << endl;
     getline(cin, input);
     playerTwoColor = input.empty() ? 'B' : input[0];
-    playerTwo = Player(tolower(playerTwoColor), &gameBoard, -1, "Computer");
+    playerTwo = Player(tolower(playerTwoColor), &gameBoard, -1, "The Computer");
     playerTwo.SetPieces(0, 11);
 
     cout << "\n" << playerName << ", are you new to Checkers? (Y/N)" << endl;
@@ -613,6 +604,7 @@ int main()
     
     playerResigning = false;
     donePlaying = false;
+
     //Main Game Loop
     while (!donePlaying) {
         if (playerOne.GetPieceCount() == 0 || playerTwo.GetPieceCount() == 0) {
@@ -642,16 +634,16 @@ int main()
         autoPlaying = false;
 
         gameBoard.DrawFormattedBoard();
-        cout << "You have " << playerOne.GetPieceCount() << " pieces left | The Computer has " 
+        cout << playerOne.GetName() <<  " has " << playerOne.GetPieceCount() << " pieces left | The Computer has " 
             << playerTwo.GetPieceCount() << " pieces left...";
-        if (playerOne.GetPieceCount() > playerTwo.GetPieceCount()) cout << "YOU ARE WINNING IN MATERIAL!" << endl;
+        if (playerOne.GetPieceCount() > playerTwo.GetPieceCount()) cout << playerOne.GetName()<< " is winning in material." << endl;
         else if (playerOne.GetPieceCount() == playerTwo.GetPieceCount()) cout << "The material is even." << endl;
-        else cout << "You are losing in material." << endl;
+        else cout << playerOne.GetName()<< " is losing in material. " << endl;
         cout << "It is your turn, " << playerOne.GetName() << "." << endl;
         if(hintsOn) cout << "Enter the number for the tile you would like to move, then enter the tile you would like to move to. \nType 'resign' to play again more quickly" << endl;
 
         while (!fromIsValid && !autoPlaying && !playerResigning) {
-
+            cout << "Move from: ";
             getline(cin, fromString);
 
             if (!fromString.compare("resign")) {
@@ -675,13 +667,13 @@ int main()
         }
 
         while (!toIsValid && !autoPlaying) {
-
+            cout << "To: ";
             getline(cin, toString);
             if (playerOne.CheckTo(toString, fromString)) {
                
                 toIsValid = true;
             }
-            else cout << "That is not a valid square to move to. Please try again." << endl;
+            else cout << "\nThat is not a valid square to move to. Please try again." << endl;
         }
         
         if (autoPlaying) {
@@ -691,6 +683,7 @@ int main()
         else {
             int to = stoi(toString) - 1;
             int from = stoi(fromString) - 1;
+            cout << endl;
             playerOne.MovePiece(from, to);
         }
         playerTwo.AutoMove();
