@@ -246,7 +246,6 @@ public:
         playerColor = _playerColor;
         gameBoard = board;
         upDirection = direction;
-        name = _name;
     }
     string GetName() {
         return name;
