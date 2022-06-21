@@ -1,12 +1,17 @@
 // Checkers Console Application.cpp : This file contains the 'main' function. Program execution begins and ends there.
 //
-
+/***************************************************************************************
+*    Title: Command Line Checkers Program for EA 
+*    Author: Ryan Houston
+*    Date: 6/16/2022
+*    Availability: https://github.com/ryanh6900
+***************************************************************************************/
 #include <iostream>
 #include <vector>
 #include <string>
 using namespace std;
-//Remember to model abstractions after real-world concepts within the game of checkers.
-class PlayTile {
+
+class PlayTile {//Remember to model abstractions after real-world concepts within the game of checkers.
 private:
     int rowNum, columnNum;
     bool isOccupied, isKing;
@@ -130,7 +135,45 @@ public:
         }
         FindAdjacentPlayTiles();
     }
-
+    void DrawFormattedTile(int whichLine, int index) {
+        int tileNum = index + 1;
+        switch (whichLine) {
+        case 1: // first line displays the tile number
+            cout << "|     ";
+            if (tileNum < 10) cout << " ";
+            cout << tileNum;
+            break;
+        case 2: // second line displays the checker piece
+            cout << "| ";
+            playableTiles[index].Draw(); // outputs exactly 5 chars
+            cout << " ";
+            break;
+        case 3: // third line is the bottom of the square
+            cout << "|-------";
+        }
+    }
+    void DrawFormattedBoard() {
+        string unusedTile = "|#######";
+        int index;
+        for (int i = 0; i < 8; i++) cout << "|-------";
+        cout << "|" << endl;
+        for (int row = 0; row < 8; row++) {
+            for (int lineCnt = 1; lineCnt <= 3; lineCnt++) { // multiple lines drawn for each tile
+                for (int col = 0; col < 4; col++) {
+                    index = row * 4 + col;
+                    if (row % 2 == 0) {
+                        cout << unusedTile;
+                        DrawFormattedTile(lineCnt, index);
+                    }
+                    else {
+                        DrawFormattedTile(lineCnt, index);
+                        cout << unusedTile;
+                    }
+                }
+                cout << "|" << endl;
+            }
+        }
+    }
     void DrawBoard() {
         int counter = 1;
         for (int index = 0; index < 32; index++) {
@@ -158,7 +201,7 @@ public:
         cout << endl;
     }
 
-    void DrawBoardWithoutPieces(int size) {
+    void DrawBoardWithoutPieces(int size) { //just used to faciliate my understanding for the checkerboard pattern.
         int counter = 1;
         for (int i = 1; i <= size; i++) {
             for (int j = 1; j <= size; j++) {
@@ -345,8 +388,8 @@ public:
 
     void MovePiece(int fromIndex, int toIndex) {
         UpdateMovablePieces();
-        PlayTile* fromTile = &gameBoard->playableTiles[fromIndex]; //pointing to our playtile at index. If this variable changes our object in array at index changes.
-        PlayTile* toTile = &gameBoard->playableTiles[toIndex];
+        PlayTile* fromTile = &gameBoard->playableTiles[fromIndex-1]; //pointing to our playtile at index. If this variable changes our object in array at index changes.
+        PlayTile* toTile = &gameBoard->playableTiles[toIndex-1];
         MovePiece(fromTile, toTile);
     }
     
@@ -378,18 +421,18 @@ public:
         return false;
     }
 
-    void AutoMove() { //This is the function that is called for the computer aka playerTwo.
+    void AutoMove() { //This is the function that is called for the computer aka playerTwo, playerOne if you select auto-move.
         UpdateMovablePieces();
         PlayTile* fromTile;
         PlayTile* toTile;
         if (movablePieces.size()) {
             for (int i = 0; i < movablePieces.size(); i++) {
                 fromTile = movablePieces[i];
-                vector<PlayTile*> possibleJumps = FindPossibleJumps(fromTile); //move priority goes to jump moves.
+                vector<PlayTile*> possibleJumps = FindPossibleJumps(fromTile); //auto-move priority goes to jump moves.
                 if (possibleJumps.size()) {
                     toTile = possibleJumps[0];
                     cout << name << " jumped from " << gameBoard->GetPlayTileNumber(fromTile) << " to " << gameBoard->GetPlayTileNumber(toTile) << endl;
-                        //<< ", taking the " << << endl;
+                    //<< ", taking the " << << endl;
                     MovePiece(fromTile, toTile);
                     return;
                 }
@@ -403,14 +446,41 @@ public:
                 MovePiece(fromTile, toTile);
                 cout << name << " moved " << gameBoard->GetPlayTileNumber(fromTile) << " to " << gameBoard->GetPlayTileNumber(toTile) << endl;
                 return;
-             }
+            }
         }
         else {
             cout << "There are no available moves for " << name << ". YOU WIN!" << endl;
         }
-        
-    }
 
+    }
+    bool CheckPlayTileInput(string str) {
+        for (int i = 0; i < str.length(); i++)
+            if (isdigit(str[i]))
+                return true;
+        return false;
+    }
+    bool CheckFrom(string str) {
+        if (CheckPlayTileInput(str) && CheckMoveAvailability(str)) return true;
+        return false;
+    }
+    bool CheckMoveAvailability(string playTileNumber) {
+        if ((FindPossibleMoves(gameBoard->GetPlayTile(stoi(playTileNumber)-1)).size()) && 
+            FindPossibleJumps(gameBoard->GetPlayTile(stoi(playTileNumber)-1)).size()){
+            return true;
+        }
+        return false;
+    }
+    bool CheckIsPossibleTo(int to, int from) {
+        for (int i = 0; i < gameBoard->GetPlayTile(from-1)->moveTiles.size(); i++) {
+            if (gameBoard->GetPlayTile(from-1)->moveTiles[i] == gameBoard->GetPlayTile(to-1)) return true;
+        }
+        return false;
+    }
+   
+    bool CheckTo(string str, int from) {
+        if (CheckPlayTileInput(str) && CheckIsPossibleTo(stoi(str),from)) return true;
+        return false;
+    }
     /* void MakeMove() {
          cin >> from;
          cin >> to;
@@ -445,84 +515,90 @@ int main()
 {
     cout << "Welcome to the Game of Checkers!" << "\n\n";
     int boardSize = 8;
+    int gameMode;
     char playerOneColor;
     char playerTwoColor;
-    char noviceAnswer;
     bool hintsOn;
+    bool autoPlaying;
+    bool fromIsValid,toIsValid;
+    bool gameOver;
     Board gameBoard;
-    int gameMode;
     
+    Player playerOne, playerTwo;
     string playerName;
+    string input;
+    string buffer;
+    gameBoard.BoardSetup(8);//board starts out as empty.
+
     cout << "What is your name?" << endl;
     getline(cin, playerName);
-    Player playerOne, playerTwo;
     cout << "\n"<<playerName << ", What character would you like for your pieces?" << endl;
-    cin >> playerOneColor;
-    gameBoard.BoardSetup(8); //board starts out as empty.
+    getline(cin, input);
+    playerOneColor = input.empty() ? 'R' : input[0];
     playerOne = Player(tolower(playerOneColor),&gameBoard,1,playerName);
     playerOne.SetPieces(20, 31);
+
     cout << "\n" << playerName<< ", What character would you like the computer to have?" << endl;
-    cin >> playerTwoColor;
+    getline(cin, input);
+    playerTwoColor = input.empty() ? 'B' : input[0];
+    playerTwo = Player(tolower(playerTwoColor), &gameBoard, -1, "Computer");
+    playerTwo.SetPieces(0, 11);
+
     cout << "\n" << playerName << ", Are you new to Checkers? (Answer Y/N)" << endl;
-    cin >> noviceAnswer;
-    noviceAnswer = (char) toupper(noviceAnswer);
-    if (noviceAnswer == 'Y') {
+    getline(cin, input);
+
+    if (toupper(input[0]) == 'Y') {
         hintsOn = true;
-        cout << "Hints Enabled" << endl;
+        cout <<"\n" << "*Hints Enabled*" << endl;
     }
     else {
         hintsOn = false;
-        cout << "Hints Disabled" << endl;
+        cout << "\n"<< "*Hints Disabled*" << endl;
     }
+    int from, to;
+    gameOver = false;
 
-    playerTwo = Player(tolower(playerTwoColor),&gameBoard,-1,"Computer");
-    playerTwo.SetPieces(0, 11);
-    
-    //gameBoard.SetupBoardPlaytiles(8, playerOne, playerTwo);
-    //int input;
-    int from, to, toAssisted;
-    while (true) {
 
-        gameBoard.DrawBoard();
+    //Main Game Loop
+    while (!gameOver) {
+
+        gameBoard.DrawFormattedBoard();
         //gameBoard.DrawBoardWithoutPieces(8);
         //playerOne.MakeMove();
-        cout << "It is your turn, " << playerOne.GetName() <<"." << endl;
-        cin >> from;
-        if (from == 0) playerOne.AutoMove();
-        if(hintsOn) {
-            playerOne.DisplayPossibleMoves(gameBoard.GetPlayTile(from - 1));
-            playerOne.DisplayPossibleJumps(gameBoard.GetPlayTile(from - 1));
-            cin >> toAssisted;
-            playerOne.MovePiece(from - 1, toAssisted - 1);
+        fromIsValid = false;
+        toIsValid = false;
+        autoPlaying = false;
+        cout << "It is your turn, " << playerOne.GetName() << ". Enter the number for the tile you would like to move, then enter the tile you would like to move to." << endl;
+        while (!fromIsValid && !autoPlaying) {
+            getline(cin, input);
+            if (playerOne.CheckFrom(input)) {
+                from = stoi(input);
+                fromIsValid = true;
+            } 
+            else {
+                if (input[0] == '0') autoPlaying = true;
+                else cout << "That is not a valid move. Please try again." << endl;
+            }
+        }
+        if (hintsOn && !autoPlaying) {
+            playerOne.DisplayPossibleMoves(gameBoard.GetPlayTile(from));
+            playerOne.DisplayPossibleJumps(gameBoard.GetPlayTile(from));
             cout << endl;
         }
-        else {
-            cin >> to;
-            playerOne.MovePiece(from - 1, to - 1);
+        
+        while (!toIsValid && !autoPlaying) {
+            
+            getline(cin, input);
+            if (playerOne.CheckTo(input, from)) {
+                to = stoi(input);
+                toIsValid = true;
+            }
+            else cout << "That is valid square to move to. Please try again." << endl;
         }
-        playerTwo.AutoMove();
+        if (autoPlaying) playerOne.AutoMove();
+        else playerOne.MovePiece(from, to);
 
-        //cout << "It is now Player 2's turn" << endl;
-        //gameBoard.MovePiece(from, to);
-
-        //cin >> input;
-        /*switch (input) {
-        
-
-        }*/
-        
+        playerTwo.AutoMove(); 
+            return 0;
+        }
     }
-    return 0;
-}
-
-
-// Run program: Ctrl + F5 or Debug > Start Without Debugging menu
-// Debug program: F5 or Debug > Start Debugging menu
-
-// Tips for Getting Started: 
-//   1. Use the Solution Explorer window to add/manage files
-//   2. Use the Team Explorer window to connect to source control
-//   3. Use the Output window to see build output and other messages
-//   4. Use the Error List window to view errors
-//   5. Go to Project > Add New Item to create new code files, or Project > Add Existing Item to add existing code files to the project
-//   6. In the future, to open this project again, go to File > Open > Project and select the .sln file
