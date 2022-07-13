@@ -1,4 +1,4 @@
-# CommandLineCheckersForElectronicArts
+# CommandLineCheckers
 To run this simply:
 1. clone the repository or download
 2. open command prompt 
