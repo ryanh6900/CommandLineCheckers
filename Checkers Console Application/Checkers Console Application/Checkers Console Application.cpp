@@ -20,7 +20,7 @@ Player -- this class represents either a human player or the computer player
 Board -- this class represent the game board, and contains the 32 PlayTiles used in the game.
 
 
-Build instructions:  Compile with V11 support. Dfter setting current directory to the folder containing this file, 
+Build instructions:  Compile with V11 support. After setting current directory to the folder containing this file, 
 run these two lines in powershell (or terminal for mac):
 
     g++ -std=c++11 -o checkers checkers.cpp
@@ -68,8 +68,8 @@ Example board:
 #include <iostream>
 #include <vector>
 #include <string>
+#include <algorithm>
 using namespace std;
-
 /*********************
 PlayTile -- models the playable squares on the board.
 
