@@ -325,6 +325,7 @@ private:
     int upDirection = 0; //used to determine which moves are appropriate for the player based on what side of the board they are on. 
     int pieceCount;
     bool playerIsMad; //a little humor
+
 public:
     Player() {
         playerColor = ' ';
