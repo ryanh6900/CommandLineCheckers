@@ -88,7 +88,7 @@ private:
 
 public:
     vector<PlayTile*> moveTiles; //These are tiles that one diagonal away.
-    vector<pair<PlayTile*, PlayTile*>> jumpTiles; //These are tiles that are exactly two diagonals away. I talked about this briefly in the interview.
+    vector<pair<PlayTile*, PlayTile*>> jumpTiles; //These are tiles that are exactly two diagonals away. This pair structure I talked about briefly in the interview.
 
     PlayTile() {
         rowNum = -1;
@@ -322,7 +322,7 @@ private:
     char playerColor;
     Board* gameBoard = nullptr;
     vector<PlayTile*> movablePieces;
-    int upDirection = 0;
+    int upDirection = 0; //used to determine which moves are appropriate for the player based on what side of the board they are on. 
     int pieceCount;
     bool playerIsMad; //a little humor
 public:
@@ -638,7 +638,7 @@ int main() //alot of the game logic might not be the best. I wanted to focus on 
             << playerTwo.GetPieceCount() << " pieces left...";
         if (playerOne.GetPieceCount() > playerTwo.GetPieceCount()) cout << playerOne.GetName()<< " is winning in material." << endl;
         else if (playerOne.GetPieceCount() == playerTwo.GetPieceCount()) cout << "The material is even." << endl;
-        else cout << playerOne.GetName()<< " is losing in material. " << endl;
+        else cout <<" " << playerOne.GetName() << " is losing in material. " << endl;
         cout << "It is your turn, " << playerOne.GetName() << "." << endl;
         if(hintsOn) cout << "Enter the number for the tile you would like to move, then enter the tile you would like to move to. \nType 'resign' to play again more quickly" << endl;
 
