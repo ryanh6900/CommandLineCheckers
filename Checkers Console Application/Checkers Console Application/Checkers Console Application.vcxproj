@@ -127,7 +127,27 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BoardSquare.cpp" />
     <ClCompile Include="Checkers Console Application.cpp" />
+    <ClCompile Include="CheckersBoard.cpp" />
+    <ClCompile Include="CheckersPiece.cpp" />
+    <ClCompile Include="CheckersPlayer.cpp" />
+    <ClCompile Include="ChessBoard.cpp" />
+    <ClCompile Include="ChessPiece.cpp" />
+    <ClCompile Include="GameBoard.cpp" />
+    <ClCompile Include="GamePiece.cpp" />
+    <ClCompile Include="GamePlayer.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="BoardSquare.h" />
+    <ClInclude Include="CheckersBoard.h" />
+    <ClInclude Include="CheckersPiece.h" />
+    <ClInclude Include="CheckersPlayer.h" />
+    <ClInclude Include="ChessBoard.h" />
+    <ClInclude Include="ChessPiece.h" />
+    <ClInclude Include="GameBoard.h" />
+    <ClInclude Include="GamePiece.h" />
+    <ClInclude Include="GamePlayer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
